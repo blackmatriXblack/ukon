@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ukon</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#fff;--fg:#111;--dim:#888;--brd:#ccc;--hl:#eee;--bgl:#fafafa}
+.dark{--bg:#111;--fg:#eee;--dim:#555;--brd:#333;--hl:#222;--bgl:#1a1a1a}
+body{background:var(--bg);color:var(--fg);font:14px/1.6 system-ui,-apple-system,sans-serif;min-height:100vh;display:flex;flex-direction:column;transition:background .25s,color .25s}
+::selection{background:var(--fg);color:var(--bg)}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--dim);border-radius:3px}
+input,button,select{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--brd);outline:none;transition:border .15s,background .15s}
+input:focus,select:focus{border-color:var(--fg)}
+::placeholder{color:var(--dim)}
+
+/* -- header ------------------------------------------------------------- */
+#hdr{display:flex;align-items:center;gap:8px;padding:6px 14px;border-bottom:1px solid var(--brd);flex-wrap:wrap;min-height:44px}
+#hdr .logo{font-size:16px;font-weight:700;letter-spacing:-.5px;user-select:none}
+#hdr .hdr-r{display:flex;align-items:center;gap:4px;margin-left:auto}
+.hdr-btn{width:30px;height:30px;border:none;background:transparent;border-radius:4px;cursor:pointer;font-size:12px;color:var(--dim);display:flex;align-items:center;justify-content:center;transition:all .15s;font-weight:600}
+.hdr-btn:hover{background:var(--hl);color:var(--fg)}
+.hdr-btn:disabled{opacity:.2;cursor:default}
+.hdr-btn:disabled:hover{background:transparent}
+
+/* -- tabs --------------------------------------------------------------- */
+#tabs{display:flex;gap:0;padding:0 14px;border-bottom:1px solid var(--brd)}
+#tabs .tab{font-size:12px;padding:7px 14px;cursor:pointer;color:var(--dim);border-bottom:2px solid transparent;transition:all .15s;user-select:none}
+#tabs .tab:hover{color:var(--fg);background:var(--hl)}
+#tabs .tab.on{color:var(--fg);border-bottom-color:var(--fg)}
+
+/* -- search bar --------------------------------------------------------- */
+#search-row{display:flex;gap:0;padding:10px 14px 0;max-width:840px;margin:0 auto;width:100%}
+#search-row .sr-wrap{flex:1;display:flex;position:relative;border:2px solid var(--brd);border-right:none;transition:border .15s}
+#search-row .sr-wrap:focus-within{border-color:var(--fg)}
+#search-row input{flex:1;height:46px;padding:0 14px;font-size:16px;border:none;min-width:0;background:transparent}
+#search-row input:focus{background:transparent}
+#search-row select{width:52px;height:46px;padding:0 2px;font-size:9px;cursor:pointer;appearance:none;text-align:center;border:none;border-left:1px solid var(--brd);flex-shrink:0;background:var(--bgl);color:var(--dim);letter-spacing:0;font-weight:600}
+#search-row select:hover{color:var(--fg)}
+#search-row button{height:46px;padding:0 18px;border:none;background:var(--fg);color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;flex-shrink:0}
+#search-row button:hover{opacity:.85}
+#search-row button:active{opacity:.7}
+
+/* -- suggester ---------------------------------------------------------- */
+#suggest{max-width:840px;margin:0 auto;width:100%;padding:0 14px}
+#suggest div{padding:8px 14px;font-size:13px;cursor:pointer;color:var(--dim);border-bottom:1px solid var(--brd);transition:all .1s;display:flex;gap:8px}
+#suggest div:hover,#suggest div.cur{background:var(--hl);color:var(--fg)}
+#suggest div .s-t{color:var(--fg);font-weight:500}
+#suggest div .s-u{font-size:11px;color:var(--dim);margin-left:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:280px}
+
+/* -- recent search dropdown --------------------------------------------- */
+#recent{max-width:840px;margin:0 auto;width:100%;padding:0 14px}
+#recent div{padding:7px 14px;font-size:13px;cursor:pointer;color:var(--dim);border-bottom:1px solid var(--brd);transition:all .1s;display:flex;gap:8px}
+#recent div:hover{background:var(--hl);color:var(--fg)}
+#recent div .r-q{color:var(--fg)}
+#recent div .r-e{font-size:11px;color:var(--dim);margin-left:auto}
+
+/* -- results ------------------------------------------------------------ */
+#results{max-width:840px;margin:0 auto;width:100%;padding:10px 14px 40px;flex:1}
+#results .meta{font-size:11px;color:var(--dim);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--brd);display:flex;justify-content:space-between}
+#results .empty{padding:50px 0;text-align:center;color:var(--dim);font-size:13px}
+.res-item{padding:11px 0;border-bottom:1px solid var(--brd);cursor:pointer;transition:all .1s}
+.res-item:hover{padding-left:8px}
+.res-item .r-t{font-size:16px;font-weight:500;color:var(--fg);margin-bottom:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.res-item .r-u{font-size:12px;color:#0a4;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.res-item .r-d{font-size:12px;color:var(--dim);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.res-item .r-s{font-size:10px;color:var(--dim);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap}
+.res-item .r-s .badge{padding:1px 6px;background:var(--bgl);border-radius:3px}
+.res-item .r-s .badge.high{background:var(--fg);color:var(--bg)}
+.res-item .r-bar{height:3px;background:var(--brd);border-radius:2px;margin-top:4px;overflow:hidden}
+.res-item .r-bar div{height:3px;background:var(--fg);border-radius:2px;transition:width .4s}
+
+/* -- web search card ---------------------------------------------------- */
+.web-card{padding:14px;background:var(--bgl);border-left:3px solid var(--fg);margin-bottom:12px;cursor:pointer;transition:all .15s}
+.web-card:hover{background:var(--hl)}
+.web-card .wc-t{font-size:15px;font-weight:600;margin-bottom:2px}
+.web-card .wc-u{font-size:12px;color:var(--dim);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.web-card .wc-d{font-size:12px;color:var(--dim)}
+
+/* -- facets ------------------------------------------------------------- */
+#facets{max-width:840px;margin:0 auto;width:100%;padding:0 14px 6px;display:flex;gap:5px;flex-wrap:wrap}
+#facets .facet{font-size:11px;padding:3px 9px;border:1px solid var(--brd);border-radius:3px;cursor:pointer;color:var(--dim);transition:all .1s;background:var(--bg);user-select:none}
+#facets .facet:hover{border-color:var(--fg);color:var(--fg)}
+#facets .facet.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+
+/* -- footer ------------------------------------------------------------- */
+#ftr{padding:6px 14px;border-top:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--dim)}
+#ftr .hint kbd{padding:1px 4px;border:1px solid var(--dim);border-radius:2px;font-size:10px;font-family:inherit}
+
+/* -- modal -------------------------------------------------------------- */
+#modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+#modal.open{display:flex}
+#modal .box{background:var(--bg);border:1px solid var(--brd);max-width:440px;width:92%;padding:20px;max-height:75vh;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.15)}
+#modal .box h3{font-size:15px;font-weight:600;margin-bottom:12px}
+#modal .row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid var(--brd);gap:8px}
+#modal .row:last-child{border-bottom:none}
+#modal .row .ov{color:var(--dim);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;text-align:right;flex-shrink:0}
+#modal .row button{padding:2px 8px;border:1px solid var(--brd);border-radius:3px;background:transparent;font-size:11px;cursor:pointer;color:var(--dim);transition:all .1s;flex-shrink:0}
+#modal .row button:hover{color:var(--fg);border-color:var(--fg)}
+#modal .act{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+#modal .act button{padding:6px 16px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;transition:all .1s}
+#modal .act .p{border:none;background:var(--fg);color:var(--bg)}
+#modal .act .p:hover{opacity:.8}
+#modal .act .s{border:1px solid var(--brd);background:transparent;color:var(--fg)}
+#modal .act .s:hover{background:var(--hl)}
+
+/* -- engine tag badges -------------------------------------------------- */
+.eng-tag{display:inline-block;padding:1px 5px;background:var(--bgl);border-radius:2px;font-size:9px;color:var(--dim);margin-left:4px;vertical-align:middle;letter-spacing:0}
+
+/* -- responsive --------------------------------------------------------- */
+@media(max-width:500px){
+  #hdr{padding:6px 10px}
+  #search-row{padding:8px 10px 0;flex-wrap:wrap}
+  #search-row input{font-size:15px;height:42px}
+  #search-row select{width:42px;height:42px}
+  #search-row button{height:42px;padding:0 14px}
+  #results{padding:8px 10px 30px}
+}
+</style>
+</head>
+<body>
+
+<!-- header -->
+<div id="hdr">
+  <span class="logo">ukon</span>
+  <div class="hdr-r">
+    <button class="hdr-btn" id="bkBtn" disabled title="Back (Alt+Left)">←</button>
+    <button class="hdr-btn" id="fwBtn" disabled title="Forward (Alt+Right)">→</button>
+    <button class="hdr-btn" onclick="e.nav.refresh()" title="Refresh">R</button>
+    <button class="hdr-btn" onclick="e.hist.openModal()" title="History">H</button>
+    <button class="hdr-btn" onclick="e.bm.openModal()" title="Bookmarks">B</button>
+    <button class="hdr-btn" onclick="e.eng.openModal()" title="Engines">E</button>
+    <button class="hdr-btn" id="thmBtn" onclick="e.ui.toggleDark()" title="Theme">T</button>
+  </div>
+</div>
+
+<!-- tabs -->
+<div id="tabs">
+  <span class="tab on" data-mode="web">Web</span>
+  <span class="tab" data-mode="images">Images</span>
+  <span class="tab" data-mode="videos">Videos</span>
+  <span class="tab" data-mode="news">News</span>
+  <span class="tab" data-mode="code">Code</span>
+  <span class="tab" data-mode="academic">Academic</span>
+  <span class="tab" data-mode="social">Social</span>
+</div>
+
+<!-- search -->
+<div id="search-row">
+  <div class="sr-wrap">
+    <input id="q" type="text" placeholder="" autofocus spellcheck="false" autocomplete="off">
+    <select id="eng"></select>
+  </div>
+  <button id="goBtn">Go</button>
+</div>
+<div id="recent"></div>
+<div id="suggest"></div>
+<div id="facets"></div>
+<div id="results"><div class="empty">enter a search query or url</div></div>
+
+<!-- footer -->
+<div id="ftr">
+  <span>ukon engine</span>
+  <span class="hint"><kbd>Tab</kbd> engine · <kbd>Esc</kbd> clear · <kbd>Up</kbd><kbd>Down</kbd> suggest</span>
+</div>
+
+<!-- modal -->
+<div id="modal">
+  <div class="box" id="modalBox"></div>
+</div>
+
+<script>
+// ============================================================================
+// ukon browser engine
+// self-contained search with levenshtein ranking / prefix index / query dsl
+// inspired by meilisearch, typesense, and elasticsearch architectures
+// ============================================================================
+(() => {
+'use strict';
+
+// ------------------------------------------------------------------------
+// Engine registry - global collection of search engines
+// ------------------------------------------------------------------------
+const ENGINES = [
+  // --- Global / Major ---
+  {id:'google',       n:'Google',                u:'https://www.google.com/search?q={q}&hl=en',           s:'g',  cat:'web'},
+  {id:'bing',         n:'Bing',                  u:'https://www.bing.com/search?q={q}',                    s:'b',  cat:'web'},
+  {id:'yahoo',        n:'Yahoo',                 u:'https://search.yahoo.com/search?p={q}',                s:'y',  cat:'web'},
+  {id:'ask',          n:'Ask',                   u:'https://www.ask.com/web?q={q}',                        s:'a',  cat:'web'},
+  {id:'aol',          n:'AOL',                   u:'https://search.aol.com/aol/search?q={q}',              s:'ao', cat:'web'},
+
+  // --- Privacy-focused ---
+  {id:'duckduckgo',   n:'DuckDuckGo',            u:'https://duckduckgo.com/?q={q}',                        s:'d',  cat:'web'},
+  {id:'brave',        n:'Brave Search',          u:'https://search.brave.com/search?q={q}',                s:'br', cat:'web'},
+  {id:'startpage',    n:'Startpage',             u:'https://www.startpage.com/sp/search?query={q}',        s:'sp', cat:'web'},
+  {id:'swisscows',    n:'Swisscows',             u:'https://swisscows.com/web?query={q}',                  s:'sc', cat:'web'},
+  {id:'metager',      n:'MetaGer',               u:'https://metager.org/meta/meta.ger3?eingabe={q}',       s:'mg', cat:'web'},
+  {id:'gibiru',       n:'Gibiru',                u:'https://gibiru.com/results.html?q={q}',                s:'gi', cat:'web'},
+  {id:'searchencrypt',n:'SearchEncrypt',         u:'https://www.searchencrypt.com/search?q={q}',           s:'se', cat:'web'},
+  {id:'oscobo',       n:'Oscobo',                u:'https://oscobo.co.uk/search?q={q}',                    s:'os', cat:'web'},
+  {id:'hulbee',       n:'Hulbee',                u:'https://hulbee.com/search?q={q}',                      s:'hu', cat:'web'},
+  {id:'lukol',        n:'Lukol',                 u:'https://www.lukol.com/search?q={q}',                   s:'lk', cat:'web'},
+  {id:'privacywall',  n:'PrivacyWall',           u:'https://www.privacywall.org/search/secure?q={q}',      s:'pw', cat:'web'},
+
+  // --- Meta-search ---
+  {id:'searxng',      n:'SearXNG',               u:'https://searx.be/search?q={q}',                        s:'sx', cat:'web'},
+  {id:'dogpile',      n:'Dogpile',               u:'https://www.dogpile.com/serp?q={q}',                   s:'dp', cat:'web'},
+  {id:'webcrawler',   n:'WebCrawler',            u:'https://www.webcrawler.com/serp?q={q}',                s:'wc', cat:'web'},
+  {id:'infospace',    n:'InfoSpace',             u:'https://www.infospace.com/serp?q={q}',                 s:'is', cat:'web'},
+
+  // --- China ---
+  {id:'baidu',        n:'Baidu',                 u:'https://www.baidu.com/s?wd={q}',                       s:'bd', cat:'web'},
+  {id:'sogou',        n:'Sogou',                 u:'https://www.sogou.com/web?query={q}',                  s:'sg', cat:'web'},
+  {id:'so360',        n:'360 Search',            u:'https://www.so.com/s?q={q}',                           s:'36', cat:'web'},
+
+  // --- Russia ---
+  {id:'yandex',       n:'Yandex',                u:'https://yandex.com/search/?text={q}',                  s:'ya', cat:'web'},
+  {id:'mailru',       n:'Mail.ru',               u:'https://go.mail.ru/search?q={q}',                      s:'mr', cat:'web'},
+
+  // --- South Korea ---
+  {id:'naver',        n:'Naver',                 u:'https://search.naver.com/search.naver?query={q}',      s:'nv', cat:'web'},
+  {id:'daum',         n:'Daum',                  u:'https://search.daum.net/search?q={q}',                 s:'du', cat:'web'},
+
+  // --- Japan ---
+  {id:'goo',          n:'goo',                   u:'https://search.goo.ne.jp/web.jsp?MT={q}',              s:'go', cat:'web'},
+
+  // --- Czech ---
+  {id:'seznam',       n:'Seznam',                u:'https://search.seznam.cz/?q={q}',                      s:'sz', cat:'web'},
+
+  // --- France ---
+  {id:'qwant',        n:'Qwant',                 u:'https://www.qwant.com/?q={q}',                         s:'qw', cat:'web'},
+  {id:'lilo',         n:'Lilo',                  u:'https://search.lilo.org/?q={q}',                       s:'li', cat:'web'},
+
+  // --- Eco / Charity ---
+  {id:'ecosia',       n:'Ecosia',                u:'https://www.ecosia.org/search?q={q}',                  s:'ec', cat:'web'},
+  {id:'searchscene',  n:'SearchScene',           u:'https://www.searchscene.com/search?q={q}',             s:'ss', cat:'web'},
+  {id:'youcare',      n:'YouCare',               u:'https://www.youcare.world/search?q={q}',               s:'yc', cat:'web'},
+  {id:'oceanhero',    n:'OceanHero',             u:'https://oceanhero.today/search?q={q}',                 s:'oh', cat:'web'},
+  {id:'ekoru',        n:'Ekoru',                 u:'https://ekoru.org/search?q={q}',                       s:'ek', cat:'web'},
+  {id:'rapusia',      n:'Rapusia',               u:'https://rapusia.org/search?q={q}',                     s:'rp', cat:'web'},
+  {id:'givewater',    n:'GiveWater',             u:'https://www.givewater.com/search?q={q}',               s:'gw', cat:'web'},
+
+  // --- Independent / Alternative ---
+  {id:'mojeek',       n:'Mojeek',                u:'https://www.mojeek.com/search?q={q}',                  s:'mj', cat:'web'},
+  {id:'gigablast',    n:'Gigablast',             u:'https://www.gigablast.com/search?q={q}',               s:'gb', cat:'web'},
+  {id:'marginalia',   n:'Marginalia',            u:'https://search.marginalia.nu/search?q={q}',            s:'ma', cat:'web'},
+  {id:'wiby',         n:'Wiby',                  u:'https://wiby.me/search?q={q}',                         s:'wi', cat:'web'},
+  {id:'million',      n:'Million Short',         u:'https://millionshort.com/search?q={q}',                s:'msh',cat:'web'},
+  {id:'boardreader',  n:'BoardReader',           u:'https://boardreader.com/s/{q}',                        s:'brd',cat:'web'},
+  {id:'entireweb',    n:'Entireweb',             u:'https://www.entireweb.com/search/?q={q}',              s:'ew', cat:'web'},
+  {id:'exactseek',    n:'ExactSeek',             u:'https://www.exactseek.com/search?q={q}',               s:'ex', cat:'web'},
+
+  // --- AI / Modern ---
+  {id:'yep',          n:'Yep',                   u:'https://yep.com/search?q={q}',                         s:'ye', cat:'web'},
+  {id:'kagi',         n:'Kagi',                  u:'https://kagi.com/search?q={q}',                        s:'ka', cat:'web'},
+  {id:'petal',        n:'Petal',                 u:'https://petalsearch.com/search?q={q}',                 s:'pt', cat:'web'},
+  {id:'you',          n:'You.com',               u:'https://you.com/search?q={q}',                         s:'yo', cat:'web'},
+  {id:'perplexity',   n:'Perplexity',            u:'https://www.perplexity.ai/search?q={q}',               s:'pp', cat:'web'},
+  {id:'komo',         n:'Komo Search',           u:'https://komo.ai/search?q={q}',                         s:'ko', cat:'web'},
+  {id:'phind',        n:'Phind',                 u:'https://www.phind.com/search?q={q}',                   s:'ph', cat:'web'},
+
+  // --- Classic ---
+  {id:'lycos',        n:'Lycos',                 u:'https://search.lycos.com/web?q={q}',                   s:'ly', cat:'web'},
+  {id:'excite',       n:'Excite',                u:'https://results.excite.com/serp?q={q}',                s:'xc', cat:'web'},
+
+  // --- Academic ---
+  {id:'googlescholar',n:'Google Scholar',        u:'https://scholar.google.com/scholar?q={q}',             s:'gs', cat:'academic'},
+  {id:'pubmed',       n:'PubMed',                u:'https://pubmed.ncbi.nlm.nih.gov/?term={q}',            s:'pm', cat:'academic'},
+  {id:'semantic',     n:'Semantic Scholar',      u:'https://www.semanticscholar.org/search?q={q}',          s:'ssc',cat:'academic'},
+  {id:'base',         n:'BASE',                  u:'https://www.base-search.net/Search/Results?lookfor={q}',s:'ba',cat:'academic'},
+  {id:'core',         n:'CORE',                  u:'https://core.ac.uk/search?q={q}',                      s:'co', cat:'academic'},
+  {id:'arxiv',        n:'arXiv',                 u:'https://export.arxiv.org/api/query?search_query=all:{q}',s:'ar',cat:'academic'},
+  {id:'crossref',     n:'CrossRef',              u:'https://search.crossref.org/?q={q}',                   s:'cf', cat:'academic'},
+
+  // --- Code / Dev ---
+  {id:'github',       n:'GitHub',                u:'https://github.com/search?q={q}',                      s:'gh', cat:'code'},
+  {id:'stackoverflow',n:'Stack Overflow',        u:'https://stackoverflow.com/search?q={q}',               s:'so', cat:'code'},
+  {id:'npm',          n:'npm',                   u:'https://www.npmjs.com/search?q={q}',                   s:'np', cat:'code'},
+  {id:'cratesio',     n:'crates.io',             u:'https://crates.io/search?q={q}',                       s:'cr', cat:'code'},
+  {id:'pypi',         n:'PyPI',                  u:'https://pypi.org/search/?q={q}',                       s:'pi', cat:'code'},
+  {id:'rubygems',     n:'RubyGems',              u:'https://rubygems.org/search?query={q}',                s:'rg', cat:'code'},
+  {id:'mdn',          n:'MDN Web Docs',          u:'https://developer.mozilla.org/en-US/search?q={q}',     s:'md', cat:'code'},
+  {id:'devto',        n:'DEV Community',         u:'https://dev.to/search?q={q}',                          s:'dv', cat:'code'},
+  {id:'codepen',      n:'CodePen',               u:'https://codepen.io/search/pens?q={q}',                 s:'cp', cat:'code'},
+
+  // --- Images ---
+  {id:'googleimg',    n:'Google Images',         u:'https://www.google.com/search?tbm=isch&q={q}',         s:'gim',cat:'images'},
+  {id:'bingimg',      n:'Bing Images',           u:'https://www.bing.com/images/search?q={q}',             s:'bi', cat:'images'},
+  {id:'unsplash',     n:'Unsplash',              u:'https://unsplash.com/s/photos/{q}',                    s:'un', cat:'images'},
+  {id:'pixabay',      n:'Pixabay',               u:'https://pixabay.com/images/search/{q}/',               s:'px', cat:'images'},
+  {id:'pexels',       n:'Pexels',                u:'https://www.pexels.com/search/{q}/',                   s:'pe', cat:'images'},
+  {id:'flickr',       n:'Flickr',                u:'https://www.flickr.com/search/?text={q}',              s:'fl', cat:'images'},
+
+  // --- Videos ---
+  {id:'youtube',      n:'YouTube',               u:'https://www.youtube.com/results?search_query={q}',     s:'yt', cat:'videos'},
+  {id:'vimeo',        n:'Vimeo',                 u:'https://vimeo.com/search?q={q}',                       s:'vm', cat:'videos'},
+  {id:'dailymotion',  n:'Dailymotion',           u:'https://www.dailymotion.com/search/{q}',               s:'dm', cat:'videos'},
+  {id:'twitch',       n:'Twitch',                u:'https://www.twitch.tv/search?term={q}',                s:'twi',cat:'videos'},
+  {id:'bitchute',     n:'BitChute',              u:'https://www.bitchute.com/search/?q={q}',               s:'bc', cat:'videos'},
+  {id:'odysee',       n:'Odysee',                u:'https://odysee.com/$/search?q={q}',                    s:'od', cat:'videos'},
+
+  // --- Social ---
+  {id:'reddit',       n:'Reddit',                u:'https://www.reddit.com/search/?q={q}',                 s:'re', cat:'social'},
+  {id:'twitter',      n:'X / Twitter',           u:'https://x.com/search?q={q}',                           s:'tw', cat:'social'},
+  {id:'pinterest',    n:'Pinterest',             u:'https://www.pinterest.com/search/pins/?q={q}',         s:'pin',cat:'social'},
+  {id:'tumblr',       n:'Tumblr',                u:'https://www.tumblr.com/search/{q}',                    s:'tb', cat:'social'},
+  {id:'mastodon',     n:'Mastodon',              u:'https://mastodon.social/search?q={q}',                 s:'mt', cat:'social'},
+  {id:'bluesky',      n:'Bluesky',               u:'https://bsky.app/search?q={q}',                        s:'bs', cat:'social'},
+  {id:'telegram',     n:'Telegram',              u:'https://t.me/s?q={q}',                                 s:'tl', cat:'social'},
+
+  // --- Design ---
+  {id:'deviantart',   n:'DeviantArt',            u:'https://www.deviantart.com/search?q={q}',              s:'dt', cat:'images'},
+  {id:'behance',      n:'Behance',               u:'https://www.behance.net/search/projects?search={q}',   s:'be', cat:'images'},
+  {id:'dribbble',     n:'Dribbble',              u:'https://dribbble.com/search/{q}',                      s:'dr', cat:'images'},
+
+  // --- News ---
+  {id:'googlenews',   n:'Google News',           u:'https://news.google.com/search?q={q}',                 s:'gn', cat:'news'},
+  {id:'bingnews',     n:'Bing News',             u:'https://www.bing.com/news/search?q={q}',               s:'bn', cat:'news'},
+  {id:'yahoonews',    n:'Yahoo News',            u:'https://news.search.yahoo.com/search?p={q}',           s:'yn', cat:'news'},
+  {id:'hackernews',   n:'Hacker News',           u:'https://hn.algolia.com/?q={q}',                        s:'hn', cat:'news'},
+
+  // --- Reference ---
+  {id:'wikipedia',    n:'Wikipedia',             u:'https://en.wikipedia.org/w/index.php?search={q}',      s:'w',  cat:'web'},
+  {id:'wiktionary',   n:'Wiktionary',            u:'https://en.wiktionary.org/w/index.php?search={q}',     s:'wk', cat:'web'},
+  {id:'wolframalpha', n:'WolframAlpha',          u:'https://www.wolframalpha.com/input/?i={q}',            s:'wa', cat:'academic'},
+  {id:'googlemaps',   n:'Google Maps',           u:'https://www.google.com/maps/search/{q}/',              s:'gm', cat:'web'},
+
+  // --- Local / Self-hosted ---
+  {id:'meili',        n:'MeiliSearch',           u:'http://localhost:7700/search?q={q}&limit=20',          s:'ms', cat:'code'},
+  {id:'typesense',    n:'TypeSense',             u:'http://localhost:8108/search?q={q}&per_page=20',       s:'ts', cat:'code'},
+  {id:'elastic',      n:'Elasticsearch',         u:'http://localhost:9200/_search?q={q}',                  s:'es', cat:'code'},
+];
+
+// ------------------------------------------------------------------------
+// Levenshtein automaton (meilisearch-inspired typo tolerance)
+// ------------------------------------------------------------------------
+class Levenshtein {
+  static distance(a,b){
+    const m=a.length,n=b.length;
+    if(m===0)return n;if(n===0)return m;
+    let p=Array(n+1),c=Array(n+1);
+    for(let i=0;i<=n;i++)p[i]=i;
+    for(let i=1;i<=m;i++){
+      c[0]=i;
+      for(let j=1;j<=n;j++){
+        const d=a[i-1]===b[j-1]?0:1;
+        c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+d);
+      }
+      [p,c]=[c,p];
+    }
+    return p[n];
+  }
+
+  static prefix(a,b){
+    const m=a.length,n=b.length;
+    let mat=Array(m+1);for(let i=0;i<=m;i++)mat[i]=Array(n+1).fill(0);
+    for(let i=0;i<=m;i++)mat[i][0]=i;
+    for(let j=0;j<=n;j++)mat[0][j]=j;
+    for(let i=1;i<=m;i++)for(let j=1;j<=n;j++){
+      const d=a[i-1]===b[j-1]?0:1;
+      mat[i][j]=Math.min(mat[i-1][j]+1,mat[i][j-1]+1,mat[i-1][j-1]+d);
+    }
+    let min=m;
+    for(let j=0;j<=n;j++)if(mat[m][j]<min)min=mat[m][j];
+    return min;
+  }
+}
+
+// ------------------------------------------------------------------------
+// Prefix index (typesense-inspired art-like prefix trie)
+// ------------------------------------------------------------------------
+class PrefixIndex {
+  constructor(){this.root={};this.count=0}
+  add(word,docId){
+    let n=this.root;
+    for(const ch of word.toLowerCase()){
+      if(!n[ch])n[ch]={};
+      n=n[ch];
+      if(!n.docs)n.docs=new Set();
+      n.docs.add(docId);
+    }
+    if(!n.leaf)n.leaf=new Set();
+    n.leaf.add(docId);
+    this.count++;
+  }
+  find(prefix){
+    let n=this.root;
+    for(const ch of prefix.toLowerCase()){
+      if(!n[ch])return new Set();
+      n=n[ch];
+    }
+    return new Set(n.docs||[]);
+  }
+  search(prefix,max=10){
+    const ids=this.find(prefix);
+    return [...ids].slice(0,max);
+  }
+}
+
+// ------------------------------------------------------------------------
+// Inverted index (meilisearch-inspired)
+// ------------------------------------------------------------------------
+class InvertedIndex {
+  constructor(){
+    this.terms={};
+    this.docs={};
+    this.prefix=new PrefixIndex();
+    this.nextId=0;
+  }
+  addDoc(title,url,desc){
+    const id=++this.nextId;
+    this.docs[id]={id,title,url,desc,terms:{},time:Date.now()};
+    const words=this.tokenize(title+' '+desc);
+    for(const w of words){
+      if(!this.terms[w])this.terms[w]=new Set();
+      this.terms[w].add(id);
+      this.docs[id].terms[w]=(this.docs[id].terms[w]||0)+1;
+      this.prefix.add(w,id);
+    }
+    return id;
+  }
+  tokenize(text){
+    return text.toLowerCase()
+      .replace(/[^a-z0-9\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af\s-]/g,'')
+      .split(/[\s-]+/)
+      .filter(w=>w.length>0);
+  }
+  search(query,opts={}){
+    const tokens=this.tokenize(query);
+    if(!tokens.length)return[];
+    let cand=null;
+    for(const t of tokens){
+      const s=this.terms[t];
+      if(!s)return[];
+      if(!cand)cand=new Set(s);
+      else cand=new Set([...cand].filter(x=>s.has(x)));
+    }
+    if(!cand)return[];
+
+    const qLower=query.toLowerCase();
+    const results=[];
+    for(const id of cand){
+      const d=this.docs[id];
+      let score=0;
+
+      if(d.title.toLowerCase()===qLower)score+=1000;
+      else if(d.title.toLowerCase().includes(qLower))score+=500;
+
+      for(const t of tokens){
+        const tf=d.terms[t]||0;
+        score+=tf*10;
+      }
+
+      const ageHours=(Date.now()-d.time)/36e5;
+      score+=Math.max(0,50-ageHours);
+
+      const lev=Levenshtein.distance(qLower,d.title.toLowerCase());
+      if(lev===0)score+=200;
+      else if(lev===1)score+=100;
+      else if(lev===2)score+=30;
+
+      results.push({doc:d,score,lev});
+    }
+
+    results.sort((a,b)=>b.score-a.score);
+
+    const facet=opts.facet;
+    let filtered=facet
+      ? results.filter(r=>r.doc.url.includes(facet)||r.doc.title.toLowerCase().includes(facet.toLowerCase()))
+      : results;
+
+    const limit=opts.limit||20;
+    return filtered.slice(0,limit).map(r=>({...r.doc,score:r.score}));
+  }
+
+  suggest(prefix,limit=8){
+    const tokens=this.tokenize(prefix);
+    if(!tokens.length)return[];
+    const last=tokens[tokens.length-1];
+    const ids=this.prefix.search(last,limit);
+    const seen=new Set();
+    const res=[];
+    for(const id of ids){
+      const d=this.docs[id];
+      if(!d||seen.has(d.url))continue;
+      seen.add(d.url);
+      res.push(d);
+      if(res.length>=limit)break;
+    }
+    return res;
+  }
+}
+
+// ------------------------------------------------------------------------
+// Query DSL (elasticsearch-inspired simple query language)
+// ------------------------------------------------------------------------
+class QueryDSL {
+  static parse(input){
+    if(!input||!input.trim())return null;
+    const q={raw:input.trim(),filters:[]};
+    let rest=q.raw;
+    const parts=rest.match(/(\w+):(\S+)/g);
+    if(parts){
+      for(const p of parts){
+        const [k,v]=p.split(':');
+        q.filters.push({field:k,value:v.replace(/"/g,'')});
+      }
+      rest=rest.replace(/(\w+):(\S+)/g,'').trim();
+    }
+    const siteM=rest.match(/site:(\S+)/i);
+    if(siteM){q.site=siteM[1].replace(/"/g,'');rest=rest.replace(/site:\S+/i,'').trim()}
+    const ftM=rest.match(/filetype:(\S+)/i);
+    if(ftM){q.filetype=ftM[1].replace(/"/g,'');rest=rest.replace(/filetype:\S+/i,'').trim()}
+    const phraseM=rest.match(/"([^"]+)"/);
+    if(phraseM){q.phrase=phraseM[1];rest=rest.replace(/"([^"]+)"/,'').trim()}
+    const negs=rest.match(/-(\S+)/g);
+    if(negs){q.exclude=negs.map(n=>n.slice(1));rest=rest.replace(/-(\S+)/g,'').trim()}
+
+    q.query=rest||q.raw;
+    return q;
+  }
+}
+
+// ------------------------------------------------------------------------
+// URL parser
+// ------------------------------------------------------------------------
+class URLParser {
+  static parse(input){
+    if(!input||!input.trim())return null;
+    input=input.trim();
+    if(/^https?:\/\//i.test(input))return{type:'url',url:input};
+    const sp=input.indexOf(' ');
+    if(sp>0){
+      const eng=ENGINES.find(e=>e.s===input.slice(0,sp));
+      if(eng)return{type:'shortcut',engine:eng,query:input.slice(sp+1),url:eng.u.replace('{q}',encodeURIComponent(input.slice(sp+1)))};
+    }
+    if(input.includes('.')&&!input.includes(' ')){
+      try{
+        let t=input;if(!/^https?:\/\//i.test(t))t='https://'+t;
+        new URL(t);return{type:'url',url:t};
+      }catch(e){}
+    }
+    return{type:'search',query:input};
+  }
+}
+
+// ------------------------------------------------------------------------
+// Local data store
+// ------------------------------------------------------------------------
+class Store {
+  constructor(){this.ls=window.localStorage;this.key='ukon_browser'}
+  get(k){try{const r=this.ls.getItem(this.key+'_'+k);return r?JSON.parse(r):null}catch(e){return null}}
+  set(k,v){try{this.ls.setItem(this.key+'_'+k,JSON.stringify(v))}catch(e){}}
+}
+
+// ------------------------------------------------------------------------
+// Session / navigation
+// ------------------------------------------------------------------------
+class Nav {
+  constructor(ui,eng,hist){
+    this.ui=ui;this.eng=eng;this.hist=hist;
+  }
+  go(input){
+    const p=URLParser.parse(input);
+    if(!p)return;
+    if(p.type==='url'){
+      this.hist.add(input,p.url);
+      window.open(p.url,'_blank');
+      this.ui.status('opened '+p.url);
+      return;
+    }
+    if(p.type==='shortcut'){
+      this.hist.add(input,p.url);
+      window.open(p.url,'_blank');
+      this.ui.status(p.engine.n+' :: '+p.query);
+      return;
+    }
+    if(p.type==='search'){
+      this.hist.add(input,null);
+      this.ui.addRecent(input);
+      this.ui.showResults(p.query);
+      window.location.hash='#q='+encodeURIComponent(p.query);
+    }
+  }
+  refresh(){
+    this.hist.add('(refresh)',null);
+    this.ui.status('refreshed');
+  }
+}
+
+// ------------------------------------------------------------------------
+// History manager
+// ------------------------------------------------------------------------
+class History {
+  constructor(store,ui){
+    this.store=store;this.ui=ui;
+    this.items=store.get('history')||[];
+  }
+  add(raw,url){
+    this.items.unshift({raw,url,time:Date.now()});
+    if(this.items.length>500)this.items=this.items.slice(0,500);
+    this.store.set('history',this.items);
+  }
+  clear(){
+    if(!confirm('Clear all history?'))return;
+    this.items=[];this.store.set('history',this.items);
+    this.ui.status('history cleared');
+    this.closeModal();
+  }
+  search(q){
+    if(!q)return this.items;
+    const l=q.toLowerCase();
+    return this.items.filter(h=>(h.raw&&h.raw.toLowerCase().includes(l))||(h.url&&h.url.toLowerCase().includes(l)));
+  }
+  openModal(){
+    const box=document.getElementById('modalBox');
+    box.innerHTML=
+      '<h3>History</h3>'+
+      '<input id="mhQ" placeholder="search history..." oninput="e.hist.renderModal(this.value)" style="width:100%;height:34px;padding:0 10px;border:1px solid var(--brd);border-radius:4px;margin-bottom:8px;background:var(--bgl)">'+
+      '<div id="mhList"></div>'+
+      '<div class="act"><button class="s" onclick="e.hist.closeModal()">Close</button><button class="s" onclick="e.hist.clear()">Clear</button></div>';
+    this.renderModal();
+    document.getElementById('modal').classList.add('open');
+  }
+  renderModal(q){
+    const items=q?this.search(q):this.items.slice(0,100);
+    const c=document.getElementById('mhList');
+    if(!items.length){c.innerHTML='<div style="color:var(--dim);font-size:12px;padding:12px 0">empty</div>';return}
+    c.innerHTML=items.map(h=>
+      '<div class="row" onclick="e.hist.closeModal();document.getElementById(\'q\').value=\''+(h.raw||'').replace(/'/g,"\\'")+'\';e.ui.showResults(\''+(h.raw||'').replace(/'/g,"\\'")+'\')"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer">'+(h.raw||'(url)')+'</span><span class="ov">'+(h.url||'search')+'</span></div>'
+    ).join('');
+  }
+  closeModal(){document.getElementById('modal').classList.remove('open')}
+}
+
+// ------------------------------------------------------------------------
+// Bookmarks manager
+// ------------------------------------------------------------------------
+class Bookmarks {
+  constructor(store,ui){
+    this.store=store;this.ui=ui;
+    this.items=store.get('bookmarks')||[];
+  }
+  add(title,url){
+    if(this.items.find(b=>b.url===url)){this.ui.status('already bookmarked');return}
+    this.items.unshift({title,url,time:Date.now()});
+    this.store.set('bookmarks',this.items);
+    this.ui.status('bookmarked');
+  }
+  remove(id){
+    this.items=this.items.filter(b=>b.id!==id);
+    this.store.set('bookmarks',this.items);
+  }
+  openModal(){
+    const box=document.getElementById('modalBox');
+    box.innerHTML=
+      '<h3>Bookmarks</h3>'+
+      '<div id="mbList"></div>'+
+      '<div class="act"><button class="s" onclick="e.bm.closeModal()">Close</button></div>';
+    this.renderModal();
+    document.getElementById('modal').classList.add('open');
+  }
+  renderModal(){
+    const c=document.getElementById('mbList');
+    if(!this.items.length){c.innerHTML='<div style="color:var(--dim);font-size:12px;padding:12px 0">empty</div>';return}
+    c.innerHTML=this.items.map((b,i)=>
+      '<div class="row"><span style="cursor:pointer" onclick="window.open(\''+b.url+'\',\'_blank\')">'+(b.title||b.url)+'</span><span class="ov">'+b.url+'</span><button onclick="e.bm.remove('+i+');e.bm.renderModal()">x</button></div>'
+    ).join('');
+  }
+  closeModal(){document.getElementById('modal').classList.remove('open')}
+}
+
+// ------------------------------------------------------------------------
+// Engine manager
+// ------------------------------------------------------------------------
+class EngManager {
+  constructor(store,ui){
+    this.store=store;this.ui=ui;
+    this.default=store.get('defaultEngine')||'google';
+    this.mode='web';
+  }
+  setDefault(id){
+    this.default=id;this.store.set('defaultEngine',id);
+  }
+  getCurrent(){
+    return ENGINES.find(e=>e.id===this.default)||ENGINES[0];
+  }
+  getByMode(mode){
+    if(mode==='web'||!mode)return ENGINES.filter(e=>e.cat==='web');
+    return ENGINES.filter(e=>e.cat===mode);
+  }
+  openModal(){
+    const box=document.getElementById('modalBox');
+    box.innerHTML=
+      '<h3>Search Engines ('+ENGINES.length+' total)</h3>'+
+      '<input id="meQ" placeholder="filter engines..." oninput="e.eng.renderFiltered(this.value)" style="width:100%;height:34px;padding:0 10px;border:1px solid var(--brd);border-radius:4px;margin-bottom:8px;background:var(--bgl)">'+
+      '<div id="meList"></div>'+
+      '<div class="act"><button class="s" onclick="e.eng.closeModal()">Close</button></div>';
+    this.renderFiltered();
+    document.getElementById('modal').classList.add('open');
+  }
+  renderFiltered(filter){
+    const c=document.getElementById('meList');
+    let list=ENGINES;
+    if(filter){const l=filter.toLowerCase();list=list.filter(e=>e.n.toLowerCase().includes(l)||e.id.toLowerCase().includes(l))}
+    const cur=this.getCurrent();
+    c.innerHTML=list.map(eng=>
+      '<div class="row"><span>'+eng.n+' <span class="eng-tag">'+eng.cat+'</span><span style="color:var(--dim);font-size:11px"> /'+eng.s+'/</span></span><span class="ov">'+eng.u.replace('{q}','...').replace(/{[^}]+}/g,'...')+'</span><button onclick="e.eng.setDefault(\''+eng.id+'\');e.eng.openModal();e.ui.populateEngines()" style="'+(eng.id===cur.id?'background:var(--fg);color:var(--bg)':'')+'">'+(eng.id===cur.id?'use':'set')+'</button></div>'
+    ).join('');
+  }
+  closeModal(){document.getElementById('modal').classList.remove('open')}
+}
+
+// ------------------------------------------------------------------------
+// Corpus (local search index)
+// ------------------------------------------------------------------------
+class Corpus {
+  constructor(){
+    this.idx=new InvertedIndex();
+    this.seed();
+  }
+  seed(){
+    const docs=[
+      ['ukon browser engine','https://github.com/ukon/engine','Self-contained JavaScript search engine with Levenshtein typo tolerance, prefix index, and DSL query parser.'],
+      ['MeiliSearch','https://www.meilisearch.com','Open-source search engine built in Rust. Fast, relevant, and developer-friendly. Features typo tolerance, faceted search, and vector search.'],
+      ['TypeSense','https://typesense.org','Open-source search engine built in C++. Blazing fast, typo-tolerant, with vector search support and instant search-as-you-type.'],
+      ['Elasticsearch','https://www.elastic.co/elasticsearch','Distributed search and analytics engine built on Apache Lucene. Full-text search, structured search, analytics, and vector search.'],
+      ['Levenshtein distance algorithm','https://en.wikipedia.org/wiki/Levenshtein_distance','String metric for measuring difference between two sequences. Used by MeiliSearch for typo tolerance with 0, 1, or 2 typo levels.'],
+      ['Adaptive Radix Tree ART','https://en.wikipedia.org/wiki/Radix_tree','Space-optimized trie data structure. Used by TypeSense for fast prefix search and in-memory indexing.'],
+      ['Apache Lucene','https://lucene.apache.org','High-performance full-text search library written in Java. Powers Elasticsearch. Features inverted index, BM25 ranking, and query language.'],
+      ['LMDB','https://symas.com/lmdb','Memory-mapped key-value database. Used by MeiliSearch as storage backend via the heed crate. ACID-compliant with zero-copy reads.'],
+      ['RocksDB','https://rocksdb.org','Embedded key-value store from Facebook. Used by TypeSense for persistent storage. LSM-tree based with high write throughput.'],
+      ['BM25 ranking','https://en.wikipedia.org/wiki/Okapi_BM25','Probabilistic ranking function used by search engines to score documents. Default in Lucene and Elasticsearch.'],
+      ['HNSW vector search','https://arxiv.org/abs/1603.09320','Hierarchical Navigable Small World graphs for approximate nearest neighbor search. Used by TypeSense for vector search.'],
+      ['Rust programming language','https://www.rust-lang.org','Systems programming language focused on safety and performance. MeiliSearch is built entirely in Rust using its async ecosystem.'],
+      ['FST finite state transducer','https://crates.io/crates/fst','Finite state transducer implementation in Rust. Used by MeiliSearch for efficient term dictionary storage.'],
+      ['RoaringBitmap','https://roaringbitmap.org','Compressed bitmap data structure. Used by MeiliSearch for efficient document ID set operations and filtering.'],
+      ['Charabia tokenizer','https://github.com/meilisearch/charabia','Unicode-aware text tokenization library for MeiliSearch. Supports multiple languages and CJK segmentation.'],
+      ['heed LMDB wrapper','https://github.com/Kerollmops/heed','Rust wrapper for LMDB. Used by MeiliSearch for safe, typed database access.'],
+      ['nlohmann JSON','https://github.com/nlohmann/json','JSON library for C++. Used by TypeSense for request/response serialization and configuration.'],
+      ['Sparse hash map','https://github.com/greg7mdp/sparsepp','Memory-efficient hash map implementation. Used by TypeSense for low-memory index storage.'],
+      ['Search engine architecture','https://www.elastic.co/blog/foundation-of-elasticsearch','Overview of modern search engine architecture: indexing pipeline, query execution, scoring, and distributed coordination.'],
+      ['Circuit breaker pattern','https://martinfowler.com/bliki/CircuitBreaker.html','Stability pattern used by Elasticsearch to prevent memory overflow during large searches.'],
+      ['Reverse index','https://en.wikipedia.org/wiki/Inverted_index','Core data structure for full-text search. Maps terms to document IDs. Foundation of all three search engines.'],
+      ['Query DSL','https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html','Elasticsearch query language supporting bool, match, term, range, fuzzy, and geo queries.'],
+      ['Scoring and relevance','https://www.meilisearch.com/docs/learn/core_concepts/relevancy','MeiliSearch ranking criteria: typo, words, proximity, attribute, sort, exactness.'],
+      ['Faceted search','https://en.wikipedia.org/wiki/Faceted_search','Search technique using hierarchical categories. Supported by all three engines for filtered navigation.'],
+      ['Typo tolerance','https://www.typesense.org/docs/guide/fuzzy-search.html','Configurable typo tolerance in TypeSense with num_typos, min_len_1typo, min_len_2typo parameters.'],
+      ['Vector search','https://www.elastic.co/what-is/vector-search','Semantic search using embedding vectors. Supported by all three engines for hybrid text+vector search.'],
+      ['Search as you type','https://www.algolia.com/blog/ux/search-as-you-type-vs-autocomplete/','Instant search suggestions as user types. TypeSense and MeiliSearch provide prefix-based suggestions.'],
+      ['Proxy search','https://en.wikipedia.org/wiki/Proxy_server','Server acting as intermediary for search requests. SearXNG is a meta-search engine that proxies queries.'],
+      ['DuckDuckGo bang syntax','https://duckduckgo.com/bang','Search shortcut syntax: !g for Google, !w for Wikipedia. ukon supports similar g/b/d/ms/ts shortcuts.'],
+      ['OpenSearch','https://opensearch.org','Community-driven fork of Elasticsearch. Provides distributed search, analytics, and observability.'],
+      ['React','https://react.dev','JavaScript library for building user interfaces. Developed by Meta. Uses virtual DOM and component-based architecture.'],
+      ['Next.js','https://nextjs.org','React framework for production. Features server-side rendering, static generation, and API routes.'],
+      ['Vue.js','https://vuejs.org','Progressive JavaScript framework for building UIs. Features reactive data binding and component system.'],
+      ['Svelte','https://svelte.dev','Cybernetically enhanced web framework. Compiles components to efficient imperative code at build time.'],
+      ['Angular','https://angular.dev','Platform for building mobile and desktop web applications. Developed by Google. Uses TypeScript and RxJS.'],
+      ['Node.js','https://nodejs.org','JavaScript runtime built on V8 engine. Event-driven, non-blocking I/O model for scalable network applications.'],
+      ['Deno','https://deno.com','Secure JavaScript and TypeScript runtime. Built on V8 and Rust. Supports ES modules natively.'],
+      ['Bun','https://bun.sh','Fast all-in-one JavaScript runtime. Built in Zig. Includes bundler, transpiler, and package manager.'],
+      ['TypeScript','https://www.typescriptlang.org','Typed superset of JavaScript that compiles to plain JavaScript. Developed by Microsoft.'],
+      ['Webpack','https://webpack.js.org','Static module bundler for JavaScript applications. Builds dependency graphs and outputs optimized bundles.'],
+      ['Vite','https://vite.dev','Next generation frontend tooling. Fast dev server with HMR and optimized builds using Rollup.'],
+      ['Tailwind CSS','https://tailwindcss.com','Utility-first CSS framework. Provides low-level utility classes for building custom designs rapidly.'],
+      ['Bootstrap','https://getbootstrap.com','Popular CSS framework for responsive web development. Includes components, grid system, and utilities.'],
+      ['CSS Grid','https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Grid_Layout','Two-dimensional layout system in CSS. Allows complex responsive layouts with rows and columns.'],
+      ['Flexbox','https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Flexible_Box_Layout','One-dimensional layout model in CSS. Distributes space and aligns content in a container.'],
+      ['WebAssembly','https://webassembly.org','Binary instruction format for stack-based virtual machine. Enables high-performance code in browsers.'],
+      ['Web Components','https://developer.mozilla.org/en-US/docs/Web/API/Web_components','Set of web platform APIs for creating reusable custom HTML elements with encapsulated styling.'],
+      ['JavaScript','https://developer.mozilla.org/en-US/docs/Web/JavaScript','High-level interpreted programming language. Core technology of the World Wide Web alongside HTML and CSS.'],
+      ['Python','https://www.python.org','High-level general-purpose programming language. Emphasizes code readability with significant indentation.'],
+      ['Java','https://www.java.com','General-purpose programming language. Runs on JVM. Used for enterprise applications, Android, and big data.'],
+      ['Go','https://go.dev','Statically typed compiled language developed by Google. Designed for simplicity, efficiency, and concurrency.'],
+      ['C++','https://isocpp.org','General-purpose programming language with object-oriented, functional, and generic features. Systems programming.'],
+      ['C','https://en.wikipedia.org/wiki/C_(programming_language)','General-purpose programming language developed by Bell Labs. Foundation of many modern languages and operating systems.'],
+      ['C#','https://learn.microsoft.com/en-us/dotnet/csharp/','Modern object-oriented programming language developed by Microsoft. Runs on .NET framework.'],
+      ['Swift','https://www.swift.org','Programming language developed by Apple for iOS, macOS, and beyond. Safe, fast, and expressive.'],
+      ['Kotlin','https://kotlinlang.org','Statically typed programming language targeting JVM, Android, and JavaScript. Developed by JetBrains.'],
+      ['Ruby','https://www.ruby-lang.org','Dynamic object-oriented programming language. Known for elegant syntax and the Ruby on Rails web framework.'],
+      ['PHP','https://www.php.net','Server-side scripting language designed for web development. Powers WordPress, Laravel, and many CMS platforms.'],
+      ['Scala','https://scala-lang.org','General-purpose language combining object-oriented and functional programming. Runs on JVM.'],
+      ['Haskell','https://www.haskell.org','Purely functional programming language with strong static typing and lazy evaluation.'],
+      ['PostgreSQL','https://www.postgresql.org','Advanced open-source relational database. Supports ACID transactions, JSON, full-text search, and extensions.'],
+      ['MySQL','https://www.mysql.com','Popular open-source relational database management system. Used extensively in web applications with LAMP stack.'],
+      ['SQLite','https://www.sqlite.org','Self-contained embedded SQL database engine. Zero-configuration, serverless. Used in mobile apps and browsers.'],
+      ['MongoDB','https://www.mongodb.com','Document-oriented NoSQL database. Stores data in flexible JSON-like documents with dynamic schemas.'],
+      ['Redis','https://redis.io','In-memory key-value data store. Used as cache, message broker, and queue. Supports multiple data structures.'],
+      ['Cassandra','https://cassandra.apache.org','Distributed NoSQL database designed for handling large amounts of data across commodity servers.'],
+      ['DuckDB','https://duckdb.org','In-process analytical SQL database. Designed for data analytics workloads. Supports SQL and columnar storage.'],
+      ['ClickHouse','https://clickhouse.com','Column-oriented DBMS for online analytical processing. Designed for real-time analytics on large datasets.'],
+      ['Docker','https://www.docker.com','Platform for developing and running applications in containers. Packages software with dependencies.'],
+      ['Kubernetes','https://kubernetes.io','Container orchestration platform. Automates deployment, scaling, and management of containerized applications.'],
+      ['AWS','https://aws.amazon.com','Amazon Web Services. Comprehensive cloud computing platform offering compute, storage, database, and AI services.'],
+      ['Google Cloud','https://cloud.google.com','Suite of cloud computing services by Google. Runs on same infrastructure as Google Search and YouTube.'],
+      ['Azure','https://azure.microsoft.com','Microsoft cloud computing platform. Offers IaaS, PaaS, and SaaS services with hybrid cloud capabilities.'],
+      ['Terraform','https://www.terraform.io','Infrastructure as Code tool by HashiCorp. Defines and provisions infrastructure using declarative configuration.'],
+      ['GitHub Actions','https://github.com/features/actions','CI/CD and automation platform integrated with GitHub. Build, test, and deploy workflows.'],
+      ['Nginx','https://nginx.org','High-performance web server and reverse proxy. Used for load balancing, caching, and serving static content.'],
+      ['OpenAI','https://openai.com','AI research organization. Creator of GPT models, DALL-E, and ChatGPT. Advances artificial intelligence.'],
+      ['PyTorch','https://pytorch.org','Open-source machine learning framework. Developed by Meta AI. Features dynamic computation graphs and GPU support.'],
+      ['TensorFlow','https://www.tensorflow.org','End-to-end open-source machine learning platform. Developed by Google. Supports deep learning and neural networks.'],
+      ['Hugging Face','https://huggingface.co','AI community platform. Hosts models, datasets, and Spaces. Leading provider of transformer models.'],
+      ['LangChain','https://www.langchain.com','Framework for building applications with LLMs. Provides chains, agents, and retrieval augmented generation.'],
+      ['LlamaIndex','https://www.llamaindex.ai','Data framework for LLM applications. Simplifies data ingestion, indexing, and querying with LLMs.'],
+      ['Linux','https://www.linux.org','Open-source Unix-like operating system kernel. Foundation of Android, ChromeOS, and most cloud infrastructure.'],
+      ['Arch Linux','https://archlinux.org','Independent Linux distribution. Rolling release model. Known for simplicity and user-centric design.'],
+      ['Ubuntu','https://ubuntu.com','Debian-based Linux distribution. Popular for desktop and server use. Long-term support releases.'],
+      ['macOS','https://www.apple.com/macos','Operating system by Apple for Mac computers. Unix-based with Aqua GUI. Known for design and ecosystem.'],
+      ['Windows','https://www.microsoft.com/windows','Operating system by Microsoft. Most widely used desktop OS. Features GUI, multitasking, and extensive software support.'],
+      ['Git','https://git-scm.com','Distributed version control system. Created by Linus Torvalds. Industry standard for source code management.'],
+      ['GitHub','https://github.com','Web-based Git hosting platform. Owned by Microsoft. Features pull requests, issues, and Actions CI/CD.'],
+      ['GitLab','https://gitlab.com','DevOps platform with Git repository management. Features CI/CD, security scanning, and package registry.'],
+      ['VS Code','https://code.visualstudio.com','Source-code editor by Microsoft. Features IntelliSense, debugging, extensions, and built-in Git support.'],
+      ['Neovim','https://neovim.io','Modern fork of Vim. Extensible text editor with Lua scripting and built-in LSP client.'],
+      ['JetBrains IDEs','https://www.jetbrains.com','Suite of integrated development environments. IntelliJ IDEA, PyCharm, WebStorm, and more for various languages.'],
+      ['Chromium','https://www.chromium.org','Open-source web browser project. Foundation for Google Chrome, Microsoft Edge, Brave, and Opera.'],
+      ['WebKit','https://webkit.org','Browser rendering engine used by Safari. Focuses on performance, standards compliance, and power efficiency.'],
+      ['Servo','https://servo.org','Experimental browser engine written in Rust. Developed by Mozilla. Focuses on parallelism and safety.'],
+      ['V8 JavaScript engine','https://v8.dev','High-performance JavaScript engine by Google. Used in Chrome, Node.js, Deno, and Electron.'],
+      ['HTTP','https://developer.mozilla.org/en-US/docs/Web/HTTP','Hypertext Transfer Protocol. Foundation of data communication on the web. Request-response protocol.'],
+      ['WebSocket','https://developer.mozilla.org/en-US/docs/Web/API/WebSocket','Protocol providing full-duplex communication over TCP connection. Enables real-time web applications.'],
+      ['gRPC','https://grpc.io','High-performance RPC framework by Google. Uses Protocol Buffers for serialization and HTTP/2 for transport.'],
+      ['GraphQL','https://graphql.org','Query language for APIs. Allows clients to request exactly what they need. Developed by Meta.'],
+      ['REST API','https://restfulapi.net','Architectural style for designing networked applications. Uses HTTP methods and resource-based URLs.'],
+      ['WebRTC','https://webrtc.org','Open framework for real-time communication in browsers. Enables video, audio, and data sharing.'],
+      ['Linear algebra','https://en.wikipedia.org/wiki/Linear_algebra','Branch of mathematics concerning vector spaces and linear equations. Foundation of machine learning and graphics.'],
+      ['Statistical learning','https://en.wikipedia.org/wiki/Statistical_learning_theory','Framework for machine learning based on statistics and functional analysis.'],
+      ['Information retrieval','https://en.wikipedia.org/wiki/Information_retrieval','Process of obtaining relevant information from large collections. Core of search engine technology.'],
+      ['Natural language processing','https://en.wikipedia.org/wiki/Natural_language_processing','Subfield of AI focused on interaction between computers and human language.'],
+      ['Distributed systems','https://en.wikipedia.org/wiki/Distributed_computing','System with components on different networked computers. Coordinates via message passing.'],
+      ['OAuth 2.0','https://oauth.net/2/','Authorization framework for delegated access. Used by web APIs for token-based authentication.'],
+      ['HTTPS','https://developers.google.com/web/fundamentals/security/encrypt-in-transit/why-https','HTTP over TLS. Encrypts communication between client and server. Essential for web security.'],
+      ['JWT','https://jwt.io','JSON Web Token. Compact URL-safe token format for claims transfer. Used for authentication and authorization.'],
+      ['Wikipedia','https://www.wikipedia.org','Free online encyclopedia. Collaborative project by Wikimedia Foundation. Available in hundreds of languages.'],
+      ['Stack Overflow','https://stackoverflow.com','Q&A community for programmers. Largest developer knowledge repository. Owned by Prosus.'],
+      ['YouTube','https://www.youtube.com','Video sharing platform by Google. Largest video hosting service. Features user uploads and live streaming.'],
+      ['Reddit','https://www.reddit.com','Social news and discussion platform. Organized into topic-based communities called subreddits.'],
+      ['Discord','https://discord.com','Voice and text chat platform. Popular among gaming and developer communities.'],
+      ['npm','https://www.npmjs.com','Package manager for JavaScript. Largest software registry. Hosts millions of packages.'],
+      ['Homebrew','https://brew.sh','Package manager for macOS and Linux. Simplifies installing open-source software from the command line.'],
+      ['Electron','https://www.electronjs.org','Framework for building desktop apps with web technologies. Used by VS Code, Slack, Discord, and Figma.'],
+      ['Tauri','https://tauri.app','Desktop application framework using web technologies and Rust backend. Smaller and more secure than Electron.'],
+      ['Django','https://www.djangoproject.com','High-level Python web framework. Emphasizes reusability and rapid development. Includes ORM and admin panel.'],
+      ['Flask','https://flask.palletsprojects.com','Lightweight Python web framework. Minimalist design. Extensible through plugins.'],
+      ['Spring Boot','https://spring.io/projects/spring-boot','Java framework for building microservices and web applications. Opinionated auto-configuration.'],
+      ['Ruby on Rails','https://rubyonrails.org','Server-side web application framework in Ruby. Convention over configuration. Rapid development.'],
+      ['Express.js','https://expressjs.com','Web framework for Node.js. Minimal and flexible. Foundation of many Node.js applications.'],
+      ['FastAPI','https://fastapi.tiangolo.com','Modern Python web framework for APIs. Automatic OpenAPI docs. High performance with async support.'],
+      ['ASP.NET Core','https://learn.microsoft.com/en-us/aspnet/core','Cross-platform framework for building web apps and APIs with .NET and C#.'],
+      ['Apache Spark','https://spark.apache.org','Unified analytics engine for large-scale data processing. Supports SQL, streaming, ML, and graph processing.'],
+      ['Apache Kafka','https://kafka.apache.org','Distributed event streaming platform. High-throughput, fault-tolerant message broker.'],
+      ['Apache Hadoop','https://hadoop.apache.org','Framework for distributed processing of large datasets across clusters of computers.'],
+      ['Tableau','https://www.tableau.com','Business intelligence and analytics platform. Visual analytics and interactive dashboards.'],
+      ['Figma','https://www.figma.com','Cloud-based design tool. Collaborative interface design, prototyping, and design systems.'],
+      ['Adobe Creative Cloud','https://www.adobe.com/creativecloud.html','Suite of creative software including Photoshop, Illustrator, Premiere Pro, and After Effects.'],
+      ['Dribbble','https://dribbble.com','Community for designers. Showcase and discover creative work in UI, graphic, and web design.'],
+      ['Material Design','https://material.io','Design system by Google. Guidelines for visual, motion, and interaction design across platforms.'],
+    ];
+    for(const [t,u,d] of docs)this.idx.addDoc(t,u,d);
+  }
+  search(query,opts){return this.idx.search(query,opts)}
+  suggest(prefix){return this.idx.suggest(prefix)}
+}
+
+// ------------------------------------------------------------------------
+// UI controller
+// ------------------------------------------------------------------------
+class UI {
+  constructor(){
+    this.el=document.getElementById('q');
+    this.es=document.getElementById('eng');
+    this.sg=document.getElementById('suggest');
+    this.rs=document.getElementById('results');
+    this.fc=document.getElementById('facets');
+    this.rc=document.getElementById('recent');
+    this.ft=document.getElementById('ftr');
+    this.suggestIdx=-1;
+  }
+
+  populateEngines(mode){
+    mode=mode||e.eng.mode;
+    const list=e.eng.getByMode(mode);
+    const def=e.eng.getCurrent();
+    const inList=list.find(en=>en.id===def.id);
+    this.es.innerHTML=list.map(eng=>
+      '<option value="'+eng.id+'"'+(eng.id===(inList?def.id:list[0]?.id)?' selected':'')+'>'+eng.n+'</option>'
+    ).join('');
+    if(!inList&&list.length){
+      e.eng.setDefault(list[0].id);
+      this.es.value=list[0].id;
+    }
+  }
+
+  status(msg){
+    const ft=document.getElementById('ftr');
+    ft.querySelector('span:first-child').textContent=msg;
+  }
+
+  // recent searches
+  getRecents(){
+    try{return JSON.parse(localStorage.getItem('ukon_browser_recents')||'[]')}catch(e){return[]}
+  }
+  addRecent(q){
+    let r=this.getRecents();
+    r=r.filter(x=>x!==q);
+    r.unshift(q);
+    if(r.length>20)r=r.slice(0,20);
+    try{localStorage.setItem('ukon_browser_recents',JSON.stringify(r))}catch(e){}
+  }
+  showRecents(){
+    const r=this.getRecents();
+    if(!r.length||document.activeElement!==this.el||this.el.value){this.rc.innerHTML='';return}
+    this.rc.innerHTML='<div style="font-size:11px;color:var(--dim);padding:4px 14px;border-bottom:1px solid var(--brd)">recent searches</div>'+
+      r.slice(0,8).map(q=>
+        '<div onclick="document.getElementById(\'q\').value=\''+q.replace(/'/g,"\\'")+'\';e.ui.sg.innerHTML=\'\';e.ui.rc.innerHTML=\'\';e.nav.go(\''+q.replace(/'/g,"\\'")+'\')"><span class="r-q">'+q+'</span><span class="r-e">search</span></div>'
+      ).join('');
+  }
+
+  showSuggestions(items){
+    if(!items||!items.length){this.sg.innerHTML='';this.suggestIdx=-1;return}
+    this.suggestIdx=-1;
+    this.sg.innerHTML=items.map((d,i)=>
+      '<div data-idx="'+i+'" onclick="e.ui.selectSuggestion(\''+d.url+'\')"><span class="s-t">'+d.title+'</span><span class="s-u">'+d.url+'</span></div>'
+    ).join('');
+  }
+
+  selectSuggestion(url){
+    window.open(url,'_blank');
+    this.sg.innerHTML='';
+    this.suggestIdx=-1;
+    this.status('opened '+url);
+  }
+
+  showResults(query){
+    const parsed=QueryDSL.parse(query);
+    const q=parsed?parsed.query:query;
+    const opts={};
+    if(parsed&&parsed.site)opts.facet=parsed.site;
+
+    const results=corpus.search(q,opts);
+    const total=results.length;
+
+    const eng=e.eng.getCurrent();
+    const webUrl=eng.u.replace('{q}',encodeURIComponent(query));
+
+    // facets
+    this.fc.innerHTML='';
+    if(total>0){
+      const domains={};
+      for(const r of results){
+        try{const d=new URL(r.url).hostname;domains[d]=(domains[d]||0)+1}catch(e){}
+      }
+      for(const [d,c] of Object.entries(domains).sort((a,b)=>b[1]-a[1]).slice(0,8)){
+        const btn=document.createElement('span');
+        btn.className='facet'+(opts.facet===d?' on':'');
+        btn.textContent=(d.length>20?d.slice(0,20)+'...':d)+' ('+c+')';
+        btn.onclick=()=>{
+          if(opts.facet===d)delete opts.facet;
+          else opts.facet=d;
+          this.showResults(q);
+        };
+        this.fc.appendChild(btn);
+      }
+    }
+
+    // web search card
+    let searchCard=
+      '<div class="web-card" onclick="window.open(\''+webUrl+'\',\'_blank\')">'+
+        '<div class="wc-t">search <strong>'+this.escHtml(query)+'</strong> on <strong>'+eng.n+'</strong></div>'+
+        '<div class="wc-u">'+this.escHtml(webUrl)+'</div>'+
+        '<div class="wc-d">Click to open in new tab'+(total>0?' - local results below':'. No local results found in index.')+'</div>'+
+      '</div>';
+
+    if(!total){
+      this.rs.innerHTML=searchCard;
+      this.status('0 results in index - searching via '+eng.n);
+      this.fc.innerHTML='<span class="facet on" style="cursor:default">local index: 0 results</span>';
+      return;
+    }
+
+    const scoreMax=Math.max(...results.map(r=>r.score),1);
+    this.rs.innerHTML='<div class="meta"><span>'+total+' local results</span><span>score max '+scoreMax.toFixed(0)+'</span></div>'+
+      searchCard+
+      results.map((r,i)=>{
+        const pct=Math.round(r.score/scoreMax*100);
+        return '<div class="res-item" onclick="window.open(\''+r.url+'\',\'_blank\')">'+
+          '<div style="display:flex;align-items:baseline;justify-content:space-between">'+
+            '<div class="r-t">'+(i+1)+'. '+this.escHtml(r.title)+'</div>'+
+            '<span style="font-size:10px;color:var(--dim);flex-shrink:0;margin-left:8px">'+(r.score|0)+'</span>'+
+          '</div>'+
+          '<div class="r-u">'+this.escHtml(r.url)+'</div>'+
+          '<div class="r-d">'+this.escHtml(r.desc||'')+'</div>'+
+          '<div class="r-bar"><div style="width:'+pct+'%"></div></div>'+
+          '<div class="r-s">'+
+            '<span class="badge high">local</span>'+
+            '<span class="badge">#'+(i+1)+'</span>'+
+            '<span class="badge">'+(()=>{try{return new URL(r.url).hostname}catch(e){return''}})()+'</span>'+
+          '</div>'+
+        '</div>';
+      }).join('');
+
+    this.status(total+' local results - search on '+eng.n+' ('+ENGINES.length+' engines)');
+  }
+
+  escHtml(s){
+    if(!s)return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  toggleDark(){
+    document.body.classList.toggle('dark');
+    document.getElementById('thmBtn').textContent=document.body.classList.contains('dark')?'D':'T';
+    e.store.set('dark',document.body.classList.contains('dark'));
+  }
+
+  loadDark(){
+    if(e.store.get('dark')){document.body.classList.add('dark');document.getElementById('thmBtn').textContent='D'}
+  }
+}
+
+// ------------------------------------------------------------------------
+// Init
+// ------------------------------------------------------------------------
+const store=new Store();
+const ui=new UI();
+const eng=new EngManager(store,ui);
+const hist=new History(store,ui);
+const bm=new Bookmarks(store,ui);
+const nav=new Nav(ui,eng,hist);
+const corpus=new Corpus();
+
+window.e={store,ui,eng,hist,bm,nav,corpus,URLParser,QueryDSL,Levenshtein};
+
+// populate
+ui.populateEngines();
+ui.loadDark();
+
+// ---- tab switching --------------------------------------------------------
+document.querySelectorAll('#tabs .tab').forEach(tab=>{
+  tab.addEventListener('click',function(){
+    document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.remove('on'));
+    this.classList.add('on');
+    e.eng.mode=this.dataset.mode;
+    ui.populateEngines(this.dataset.mode);
+    const q=document.getElementById('q').value.trim();
+    if(q)ui.showResults(q);
+  });
+});
+
+// ---- engine change triggers re-search ------------------------------------
+document.getElementById('eng').addEventListener('change',function(){
+  e.eng.setDefault(this.value);
+  const q=document.getElementById('q').value.trim();
+  if(q){
+    ui.showResults(q);
+    window.location.hash='#q='+encodeURIComponent(q);
+  }
+});
+
+// ---- input events ---------------------------------------------------------
+let suggestTimer=null;
+document.getElementById('q').addEventListener('input',function(){
+  const v=this.value.trim();
+  clearTimeout(suggestTimer);
+  if(!v){
+    ui.sg.innerHTML='';
+    ui.suggestIdx=-1;
+    ui.showRecents();
+    return
+  }
+  ui.rc.innerHTML='';
+  suggestTimer=setTimeout(()=>{
+    const items=corpus.suggest(v);
+    ui.showSuggestions(items);
+  },100);
+});
+
+document.getElementById('q').addEventListener('keydown',function(ev){
+  const sug=document.querySelectorAll('#suggest div');
+  if(ev.key==='ArrowDown'&&sug.length){
+    ev.preventDefault();
+    sug.forEach(s=>s.classList.remove('cur'));
+    ui.suggestIdx=Math.min(ui.suggestIdx+1,sug.length-1);
+    sug[ui.suggestIdx]?.classList.add('cur');
+    return;
+  }
+  if(ev.key==='ArrowUp'&&sug.length){
+    ev.preventDefault();
+    sug.forEach(s=>s.classList.remove('cur'));
+    ui.suggestIdx=Math.max(ui.suggestIdx-1,-1);
+    if(ui.suggestIdx>=0)sug[ui.suggestIdx]?.classList.add('cur');
+    return;
+  }
+  if(ev.key==='Enter'){
+    if(ui.suggestIdx>=0&&sug[ui.suggestIdx]){
+      sug[ui.suggestIdx].click();
+      return;
+    }
+    ev.preventDefault();
+    ui.sg.innerHTML='';
+    ui.rc.innerHTML='';
+    ui.suggestIdx=-1;
+    nav.go(this.value);
+  }
+  if(ev.key==='Tab'){
+    ev.preventDefault();
+    const engines=document.getElementById('eng');
+    const idx=engines.selectedIndex;
+    engines.selectedIndex=(idx+1)%ENGINES.length;
+    engines.dispatchEvent(new Event('change'));
+  }
+  if(ev.key==='Escape'){
+    this.value='';
+    ui.sg.innerHTML='';
+    ui.rc.innerHTML='';
+    ui.suggestIdx=-1;
+    ui.fc.innerHTML='';
+    ui.rs.innerHTML='<div class="empty">enter a search query or url</div>';
+    ui.status('ukon engine');
+    window.location.hash='';
+  }
+});
+
+document.getElementById('goBtn').addEventListener('click',function(){
+  ui.sg.innerHTML='';
+  ui.rc.innerHTML='';
+  nav.go(document.getElementById('q').value);
+});
+
+// ---- recent searches on focus ---------------------------------------------
+document.getElementById('q').addEventListener('focus',function(){
+  if(!this.value.trim())ui.showRecents();
+});
+
+document.getElementById('q').addEventListener('blur',function(){
+  setTimeout(()=>{ui.rc.innerHTML=''},200);
+});
+
+// ---- loads hash query on page load ----------------------------------------
+(function loadHash(){
+  const h=window.location.hash;
+  if(h&&h.startsWith('#q=')){
+    const q=decodeURIComponent(h.slice(3));
+    document.getElementById('q').value=q;
+    nav.go(q);
+  }
+})();
+
+// Focus
+document.getElementById('q').focus();
+
+// ---- Global shortcuts -----------------------------------------------------
+document.addEventListener('keydown',function(ev){
+  if(ev.ctrlKey&&ev.key==='l'){ev.preventDefault();document.getElementById('q').focus();document.getElementById('q').select()}
+  if(ev.altKey&&ev.key==='ArrowLeft'){ev.preventDefault()}
+  if(ev.altKey&&ev.key==='ArrowRight'){ev.preventDefault()}
+  if(ev.key==='F5'){ev.preventDefault();nav.refresh()}
+  // Ctrl+Enter: open search directly in engine
+  if(ev.ctrlKey&&ev.key==='Enter'){
+    const q=document.getElementById('q').value.trim();
+    if(q){
+      const eng=e.eng.getCurrent();
+      window.open(eng.u.replace('{q}',encodeURIComponent(q)),'_blank');
+    }
+  }
+});
+
+console.log('ukon engine loaded');
+console.log('index: '+corpus.idx.nextId+' docs');
+console.log('engines: '+ENGINES.length);
+})();
+</script>
+</body>
+</html>
